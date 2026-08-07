@@ -10,6 +10,7 @@ body {
 #game-container {
     width: 320px;
     height: 640px;
-    background-color: #fff;
     position: relative;
+    background-color: black;
 }
+

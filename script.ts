@@ -30,8 +30,7 @@ const tetrominoes: { [key: string]: number[][] } = {
     'T': [
         [0, 1, 0],
         [1, 1, 1]
-    ],
-    // Add more tetrominoes as needed
+    ]
 };
 
 class Tetromino {
