@@ -10,6 +10,11 @@ const grid = {
     size: 20
 };
 
+const board: number[][] = Array.from(
+    { length: grid.rows },
+    () => Array(grid.cols).fill(0)
+);
+
 function drawGrid() {
     for (let row = 0; row < grid.rows; row++) {
         for (let col = 0; col < grid.cols; col++) {
@@ -113,6 +118,16 @@ class Tetromino {
         return false;
     }
 	
+	lock() {
+    for (let i = 0; i < this.shape.length; i++) {
+        for (let j = 0; j < this.shape[i].length; j++) {
+            if (this.shape[i][j]) {
+                board[this.y + i][this.x + j] = 1;
+            }
+        }
+    }
+}
+	
 	canMove(dx: number, dy: number): boolean {
     for (let i = 0; i < this.shape.length; i++) {
         for (let j = 0; j < this.shape[i].length; j++) {
@@ -134,6 +149,23 @@ class Tetromino {
 }
 }
 
+function drawBoard() {
+    ctx.fillStyle = 'blue';
+
+    for (let row = 0; row < grid.rows; row++) {
+        for (let col = 0; col < grid.cols; col++) {
+            if (board[row][col]) {
+                ctx.fillRect(
+                    col * grid.size,
+                    row * grid.size,
+                    grid.size,
+                    grid.size
+                );
+            }
+        }
+    }
+}
+
 let currentTetromino = new Tetromino(tetrominoes['I']);
 let nextTetromino: Tetromino;
 let lastDropTime = 0;
@@ -146,10 +178,8 @@ function gameLoop(timestamp: number) {
 
         if (currentTetromino.collidesWithWalls()) {
             currentTetromino.moveUp();
-
-            // Temporary: restart a new piece at the top.
-            // Later, lock the old piece into a board array first.
-            currentTetromino = new Tetromino(tetrominoes['I']);
+			currentTetromino.lock();
+			currentTetromino = new Tetromino(tetrominoes['I']);
         }
 
         lastDropTime = timestamp;
@@ -157,8 +187,9 @@ function gameLoop(timestamp: number) {
 
     // Draw every animation frame.
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawGrid();
-    currentTetromino.draw();
+	drawGrid();
+	drawBoard();
+	currentTetromino.draw();
 
     requestAnimationFrame(gameLoop);
 }
