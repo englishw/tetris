@@ -4,6 +4,36 @@ canvas.height = 640;
 const ctx = canvas.getContext('2d')!;
 document.getElementById('game-container')!.appendChild(canvas);
 
+const grid = {
+    rows: 20,
+    cols: 10,
+    size: 20
+};
+
+function drawGrid() {
+    for (let row = 0; row < grid.rows; row++) {
+        for (let col = 0; col < grid.cols; col++) {
+            ctx.strokeStyle = '#ddd';
+            ctx.strokeRect(col * grid.size, row * grid.size, grid.size, grid.size);
+        }
+    }
+}
+
+const tetrominoes: { [key: string]: number[][] } = {
+    'I': [
+        [1, 1, 1, 1]
+    ],
+    'O': [
+        [1, 1],
+        [1, 1]
+    ],
+    'T': [
+        [0, 1, 0],
+        [1, 1, 1]
+    ],
+    // Add more tetrominoes as needed
+};
+
 class Tetromino {
     private shape: number[][];
     private x: number;
@@ -11,7 +41,7 @@ class Tetromino {
 
     constructor(shape: number[][]) {
         this.shape = shape;
-        this.x = Math.floor((canvas.width / 20) - (shape[0].length / 2));
+        this.x = Math.floor((grid.cols / 2) - (shape[0].length / 2));
         this.y = 0;
     }
 
@@ -20,7 +50,7 @@ class Tetromino {
         for (let i = 0; i < this.shape.length; i++) {
             for (let j = 0; j < this.shape[i].length; j++) {
                 if (this.shape[i][j]) {
-                    ctx.fillRect((this.x + j) * 20, (this.y + i) * 20, 20, 20);
+                    ctx.fillRect((this.x + j) * grid.size, (this.y + i) * grid.size, grid.size, grid.size);
                 }
             }
         }
@@ -49,28 +79,52 @@ class Tetromino {
         }
         this.shape = newShape;
     }
+
+    collidesWithWalls() {
+        for (let i = 0; i < this.shape.length; i++) {
+            for (let j = 0; j < this.shape[i].length; j++) {
+                if (this.shape[i][j]) {
+                    const newX = this.x + j;
+                    const newY = this.y + i;
+                    if (newX < 0 || newX >= grid.cols || newY >= grid.rows) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    collidesWithTetromino(tetromino: Tetromino) {
+        for (let i = 0; i < this.shape.length; i++) {
+            for (let j = 0; j < this.shape[i].length; j++) {
+                if (this.shape[i][j]) {
+                    const newX = this.x + j;
+                    const newY = this.y + i;
+                    if (tetromino.shape[newY - tetromino.y] && tetromino.shape[newY - tetromino.y][newX - tetromino.x]) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
 }
 
-const tetrominoes: { [key: string]: number[][] } = {
-    'I': [
-        [1, 1, 1, 1]
-    ],
-    'O': [
-        [1, 1],
-        [1, 1]
-    ],
-    'T': [
-        [0, 1, 0],
-        [1, 1, 1]
-    ],
-    // Add more tetrominoes as needed
-};
-
-const currentTetromino = new Tetromino(tetrominoes['I']);
+let currentTetromino = new Tetromino(tetrominoes['I']);
+let nextTetromino: Tetromino;
 
 function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    currentTetromino.moveDown();
+    drawGrid();
+    
+    if (currentTetromino.collidesWithWalls()) {
+        currentTetromino.moveDown(); // Move it back up
+        // TODO: Lock the tetromino and create a new one
+    } else {
+        currentTetromino.moveDown();
+    }
+    
     currentTetromino.draw();
 
     requestAnimationFrame(gameLoop);
