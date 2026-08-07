@@ -242,14 +242,76 @@ document.addEventListener('keydown', (e) => {
             currentTetromino.moveRight();
         }
     } else if (e.key === 'ArrowUp') {
-        // rotation handling – see next section
         currentTetromino.tryRotate();
     } else if (e.key === 'ArrowDown') {
-        // soft drop (optional)
         if (currentTetromino.canMove(0, 1)) {
             currentTetromino.moveDown();
         }
     }
+});
+
+// Touch controls
+let touchStartX = 0;
+let touchStartY = 0;
+const swipeDistance = 30;
+
+canvas.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+
+    const rect = canvas.getBoundingClientRect();
+
+    // Convert screen coordinates to canvas coordinates
+    touchStartX = (e.clientX - rect.left) * (canvas.width / rect.width);
+    touchStartY = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+    // Continue receiving this gesture if the finger moves slightly off canvas
+    canvas.setPointerCapture(e.pointerId);
+});
+
+canvas.addEventListener('pointerup', (e) => {
+    e.preventDefault();
+
+    const rect = canvas.getBoundingClientRect();
+    const touchEndX = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const touchEndY = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+    const deltaX = touchEndX - touchStartX;
+    const deltaY = touchEndY - touchStartY;
+
+    // Swipe down: move one row down
+    if (deltaY > swipeDistance && Math.abs(deltaY) > Math.abs(deltaX)) {
+        if (currentTetromino.canMove(0, 1)) {
+            currentTetromino.moveDown();
+        }
+        return;
+    }
+
+    // Ignore left, right, and upward swipes for now
+    if (Math.abs(deltaX) > swipeDistance || Math.abs(deltaY) > swipeDistance) {
+        return;
+    }
+
+    // Tap in the upper quarter: rotate
+    if (touchStartY < canvas.height * 0.25) {
+        currentTetromino.tryRotate();
+        return;
+    }
+
+    // Tap left/right half: move left/right
+    if (touchStartX < canvas.width / 2) {
+        if (currentTetromino.canMove(-1, 0)) {
+            currentTetromino.moveLeft();
+        }
+    } else {
+        if (currentTetromino.canMove(1, 0)) {
+            currentTetromino.moveRight();
+        }
+    }
+});
+
+canvas.addEventListener('pointercancel', () => {
+    touchStartX = 0;
+    touchStartY = 0;
 });
 
 gameLoop(0);
