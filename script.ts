@@ -66,6 +66,10 @@ class Tetromino {
     moveRight() {
         this.x++;
     }
+	
+	moveUp() {
+    this.y--;
+}
 
     rotate() {
         const newShape = [];
@@ -108,22 +112,52 @@ class Tetromino {
         }
         return false;
     }
+	
+	canMove(dx: number, dy: number): boolean {
+    for (let i = 0; i < this.shape.length; i++) {
+        for (let j = 0; j < this.shape[i].length; j++) {
+            if (!this.shape[i][j]) continue;
+
+            const newX = this.x + j + dx;
+            const newY = this.y + i + dy;
+
+            if (
+                newX < 0 ||
+                newX >= grid.cols ||
+                newY >= grid.rows
+            ) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
 }
 
 let currentTetromino = new Tetromino(tetrominoes['I']);
 let nextTetromino: Tetromino;
+let lastDropTime = 0;
+const dropInterval = 500; // milliseconds: one grid row every 0.5 seconds
 
-function gameLoop() {
+function gameLoop(timestamp: number) {
+    // Advance the game state only on the drop timer.
+    if (timestamp - lastDropTime >= dropInterval) {
+        currentTetromino.moveDown();
+
+        if (currentTetromino.collidesWithWalls()) {
+            currentTetromino.moveUp();
+
+            // Temporary: restart a new piece at the top.
+            // Later, lock the old piece into a board array first.
+            currentTetromino = new Tetromino(tetrominoes['I']);
+        }
+
+        lastDropTime = timestamp;
+    }
+
+    // Draw every animation frame.
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawGrid();
-    
-    if (currentTetromino.collidesWithWalls()) {
-        currentTetromino.moveDown(); // Move it back up
-        // TODO: Lock the tetromino and create a new one
-    } else {
-        currentTetromino.moveDown();
-    }
-    
     currentTetromino.draw();
 
     requestAnimationFrame(gameLoop);
@@ -139,4 +173,4 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-gameLoop();
+gameLoop(0);
