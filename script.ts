@@ -73,8 +73,8 @@ class Tetromino {
     }
 	
 	moveUp() {
-    this.y--;
-}
+		this.y--;
+	}
 
     rotate() {
         const newShape = [];
@@ -103,13 +103,13 @@ class Tetromino {
         return false;
     }
 
-    collidesWithTetromino(tetromino: Tetromino) {
+    collidesWithBoard() {
         for (let i = 0; i < this.shape.length; i++) {
             for (let j = 0; j < this.shape[i].length; j++) {
                 if (this.shape[i][j]) {
                     const newX = this.x + j;
                     const newY = this.y + i;
-                    if (tetromino.shape[newY - tetromino.y] && tetromino.shape[newY - tetromino.y][newX - tetromino.x]) {
+                    if (newY > 0 && board[newY - 1][newX]) {
                         return true;
                     }
                 }
@@ -117,36 +117,36 @@ class Tetromino {
         }
         return false;
     }
-	
-	lock() {
-    for (let i = 0; i < this.shape.length; i++) {
-        for (let j = 0; j < this.shape[i].length; j++) {
-            if (this.shape[i][j]) {
-                board[this.y + i][this.x + j] = 1;
+
+    lock() {
+        for (let i = 0; i < this.shape.length; i++) {
+            for (let j = 0; j < this.shape[i].length; j++) {
+                if (this.shape[i][j]) {
+                    board[this.y + i][this.x + j] = 1;
+                }
             }
         }
     }
-}
-	
-	canMove(dx: number, dy: number): boolean {
-    for (let i = 0; i < this.shape.length; i++) {
-        for (let j = 0; j < this.shape[i].length; j++) {
-            if (!this.shape[i][j]) continue;
 
-            const newX = this.x + j + dx;
-            const newY = this.y + i + dy;
+    canMove(dx: number, dy: number): boolean {
+        for (let i = 0; i < this.shape.length; i++) {
+            for (let j = 0; j < this.shape[i].length; j++) {
+                if (!this.shape[i][j]) continue;
 
-            if (
-                newX < 0 ||
-                newX >= grid.cols ||
-                newY >= grid.rows
-            ) {
-                return false;
+                const newX = this.x + j + dx;
+                const newY = this.y + i + dy;
+
+                if (
+                    newX < 0 ||
+                    newX >= grid.cols ||
+                    newY >= grid.rows
+                ) {
+                    return false;
+                }
             }
         }
+        return true;
     }
-    return true;
-}
 }
 
 function drawBoard() {
@@ -176,10 +176,11 @@ function gameLoop(timestamp: number) {
     if (timestamp - lastDropTime >= dropInterval) {
         currentTetromino.moveDown();
 
-        if (currentTetromino.collidesWithWalls()) {
+        if (currentTetromino.collidesWithWalls() || currentTetromino.collidesWithBoard()) {
             currentTetromino.moveUp();
-			currentTetromino.lock();
-			currentTetromino = new Tetromino(tetrominoes['I']);
+            currentTetromino.lock();
+            clearFullRows();
+            currentTetromino = new Tetromino(tetrominoes['I']);
         }
 
         lastDropTime = timestamp;
@@ -187,11 +188,31 @@ function gameLoop(timestamp: number) {
 
     // Draw every animation frame.
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-	drawGrid();
-	drawBoard();
-	currentTetromino.draw();
+    drawGrid();
+    drawBoard();
+    currentTetromino.draw();
 
     requestAnimationFrame(gameLoop);
+}
+
+function clearFullRows() {
+    for (let row = grid.rows - 1; row >= 0; row--) {
+        let isRowFull = true;
+        for (let col = 0; col < grid.cols; col++) {
+            if (!board[row][col]) {
+                isRowFull = false;
+                break;
+            }
+        }
+
+        if (isRowFull) {
+            // Shift all rows above the full row down by one
+            for (let r = row; r > 0; r--) {
+                board[r] = [...board[r - 1]];
+            }
+            board[0] = Array(grid.cols).fill(0);
+        }
+    }
 }
 
 document.addEventListener('keydown', (e) => {

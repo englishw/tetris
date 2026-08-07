@@ -87,13 +87,13 @@ class Tetromino {
         }
         return false;
     }
-    collidesWithTetromino(tetromino) {
+    collidesWithBoard() {
         for (let i = 0; i < this.shape.length; i++) {
             for (let j = 0; j < this.shape[i].length; j++) {
                 if (this.shape[i][j]) {
                     const newX = this.x + j;
                     const newY = this.y + i;
-                    if (tetromino.shape[newY - tetromino.y] && tetromino.shape[newY - tetromino.y][newX - tetromino.x]) {
+                    if (newY > 0 && board[newY - 1][newX]) {
                         return true;
                     }
                 }
@@ -145,9 +145,10 @@ function gameLoop(timestamp) {
     // Advance the game state only on the drop timer.
     if (timestamp - lastDropTime >= dropInterval) {
         currentTetromino.moveDown();
-        if (currentTetromino.collidesWithWalls()) {
+        if (currentTetromino.collidesWithWalls() || currentTetromino.collidesWithBoard()) {
             currentTetromino.moveUp();
             currentTetromino.lock();
+            clearFullRows();
             currentTetromino = new Tetromino(tetrominoes['I']);
         }
         lastDropTime = timestamp;
@@ -158,6 +159,24 @@ function gameLoop(timestamp) {
     drawBoard();
     currentTetromino.draw();
     requestAnimationFrame(gameLoop);
+}
+function clearFullRows() {
+    for (let row = grid.rows - 1; row >= 0; row--) {
+        let isRowFull = true;
+        for (let col = 0; col < grid.cols; col++) {
+            if (!board[row][col]) {
+                isRowFull = false;
+                break;
+            }
+        }
+        if (isRowFull) {
+            // Shift all rows above the full row down by one
+            for (let r = row; r > 0; r--) {
+                board[r] = [...board[r - 1]];
+            }
+            board[0] = Array(grid.cols).fill(0);
+        }
+    }
 }
 document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowLeft') {
