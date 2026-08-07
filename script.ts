@@ -72,51 +72,43 @@ class Tetromino {
         this.x++;
     }
 	
-	moveUp() {
-		this.y--;
-	}
-
-    rotate() {
-        const newShape = [];
-        for (let i = 0; i < this.shape[0].length; i++) {
-            const newRow: number[] = [];
-            for (let j = this.shape.length - 1; j >= 0; j--) {
-                newRow.push(this.shape[j][i]);
-            }
-            newShape.push(newRow);
+	rotateShape(shape: number[][]): number[][] {
+    const newShape: number[][] = [];
+    for (let i = 0; i < shape[0].length; i++) {
+        const newRow: number[] = [];
+        for (let j = shape.length - 1; j >= 0; j--) {
+            newRow.push(shape[j][i]);
         }
-        this.shape = newShape;
+        newShape.push(newRow);
     }
+    return newShape;
+}
 
-    collidesWithWalls() {
-        for (let i = 0; i < this.shape.length; i++) {
-            for (let j = 0; j < this.shape[i].length; j++) {
-                if (this.shape[i][j]) {
-                    const newX = this.x + j;
-                    const newY = this.y + i;
-                    if (newX < 0 || newX >= grid.cols || newY >= grid.rows) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
+tryRotate() {
+    const rotated = this.rotateShape(this.shape);
 
-    collidesWithBoard() {
-        for (let i = 0; i < this.shape.length; i++) {
-            for (let j = 0; j < this.shape[i].length; j++) {
-                if (this.shape[i][j]) {
-                    const newX = this.x + j;
-                    const newY = this.y + i;
-                    if (newY > 0 && board[newY - 1][newX]) {
-                        return true;
-                    }
-                }
+    // Check the rotated shape against board and walls
+    for (let i = 0; i < rotated.length; i++) {
+        for (let j = 0; j < rotated[i].length; j++) {
+            if (!rotated[i][j]) continue;
+
+            const newX = this.x + j;
+            const newY = this.y + i;
+
+            if (
+                newX < 0 ||
+                newX >= grid.cols ||
+                newY < 0 ||
+                newY >= grid.rows ||
+                board[newY][newX]
+            ) {
+                return; // invalid rotation, do nothing
             }
         }
-        return false;
     }
+
+    this.shape = rotated;
+}
 
     lock() {
         for (let i = 0; i < this.shape.length; i++) {
@@ -129,24 +121,37 @@ class Tetromino {
     }
 
     canMove(dx: number, dy: number): boolean {
-        for (let i = 0; i < this.shape.length; i++) {
-            for (let j = 0; j < this.shape[i].length; j++) {
-                if (!this.shape[i][j]) continue;
+    for (let i = 0; i < this.shape.length; i++) {
+        for (let j = 0; j < this.shape[i].length; j++) {
+            if (!this.shape[i][j]) continue;
 
-                const newX = this.x + j + dx;
-                const newY = this.y + i + dy;
+            const newX = this.x + j + dx;
+            const newY = this.y + i + dy;
 
-                if (
-                    newX < 0 ||
-                    newX >= grid.cols ||
-                    newY >= grid.rows
-                ) {
-                    return false;
-                }
+            // Check walls and bottom
+            if (
+                newX < 0 ||
+                newX >= grid.cols ||
+                newY >= grid.rows
+            ) {
+                return false;
+            }
+
+            // Check collision with locked blocks
+            if (board[newY][newX]) {
+                return false;
             }
         }
-        return true;
     }
+    return true;
+}
+}
+
+const tetrominoKeys = Object.keys(tetrominoes);
+
+function randomTetromino(): Tetromino {
+    const key = tetrominoKeys[Math.floor(Math.random() * tetrominoKeys.length)];
+    return new Tetromino(tetrominoes[key]);
 }
 
 function drawBoard() {
@@ -166,21 +171,31 @@ function drawBoard() {
     }
 }
 
-let currentTetromino = new Tetromino(tetrominoes['I']);
-let nextTetromino: Tetromino;
+let currentTetromino = randomTetromino();
+
 let lastDropTime = 0;
 const dropInterval = 500; // milliseconds: one grid row every 0.5 seconds
 
 function gameLoop(timestamp: number) {
     // Advance the game state only on the drop timer.
     if (timestamp - lastDropTime >= dropInterval) {
-        currentTetromino.moveDown();
-
-        if (currentTetromino.collidesWithWalls() || currentTetromino.collidesWithBoard()) {
-            currentTetromino.moveUp();
+        if (currentTetromino.canMove(0, 1)) {
+            currentTetromino.moveDown();
+        } else {
+            // Land the piece
             currentTetromino.lock();
             clearFullRows();
-            currentTetromino = new Tetromino(tetrominoes['I']);
+
+            // Spawn a new random piece at the top
+            currentTetromino = randomTetromino();
+
+            // Game over check – new piece cannot be placed
+            if (!currentTetromino.canMove(0, 0)) {
+                alert('Game over!');
+                for (let r = 0; r < grid.rows; r++) {
+                    board[r].fill(0);
+                }
+            }
         }
 
         lastDropTime = timestamp;
@@ -206,22 +221,34 @@ function clearFullRows() {
         }
 
         if (isRowFull) {
-            // Shift all rows above the full row down by one
+            // Shift all rows above this one down
             for (let r = row; r > 0; r--) {
                 board[r] = [...board[r - 1]];
             }
             board[0] = Array(grid.cols).fill(0);
+
+            row++; // re-check this row, a new row has fallen into it
         }
     }
 }
 
 document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowLeft') {
-        currentTetromino.moveLeft();
+        if (currentTetromino.canMove(-1, 0)) {
+            currentTetromino.moveLeft();
+        }
     } else if (e.key === 'ArrowRight') {
-        currentTetromino.moveRight();
+        if (currentTetromino.canMove(1, 0)) {
+            currentTetromino.moveRight();
+        }
     } else if (e.key === 'ArrowUp') {
-        currentTetromino.rotate();
+        // rotation handling – see next section
+        currentTetromino.tryRotate();
+    } else if (e.key === 'ArrowDown') {
+        // soft drop (optional)
+        if (currentTetromino.canMove(0, 1)) {
+            currentTetromino.moveDown();
+        }
     }
 });
 
