@@ -9,7 +9,7 @@ const grid = {
     cols: 10,
     size: 20
 };
-const board = Array.from({ length: grid.rows }, () => Array(grid.cols).fill({ filled: false }));
+const board = Array.from({ length: grid.rows }, () => Array.from({ length: grid.cols }, () => ({ filled: false })));
 function drawGrid() {
     for (let row = 0; row < grid.rows; row++) {
         for (let col = 0; col < grid.cols; col++) {
@@ -178,7 +178,7 @@ function drawBoard() {
     }
 }
 let currentTetromino = randomTetromino();
-let lastDropTime = Date.now();
+let lastDropTime = 0;
 const dropInterval = 500; // milliseconds: one grid row every 0.5 seconds
 function gameLoop(timestamp) {
     // Advance the game state only on the drop timer.
@@ -195,9 +195,7 @@ function gameLoop(timestamp) {
             // Game over check – new piece cannot be placed
             if (!currentTetromino.canMove(0, 0)) {
                 alert('Game over!');
-                for (let r = 0; r < grid.rows; r++) {
-                    board[r] = Array(grid.cols).fill({ filled: false });
-                }
+                resetBoard();
             }
         }
         lastDropTime = timestamp;
@@ -211,6 +209,11 @@ function gameLoop(timestamp) {
     currentTetromino.draw();
     // Request next frame
     requestAnimationFrame(gameLoop);
+}
+function resetBoard() {
+    for (let row = 0; row < grid.rows; row++) {
+        board[row] = Array.from({ length: grid.cols }, () => ({ filled: false }));
+    }
 }
 function clearFullRows() {
     for (let row = grid.rows - 1; row >= 0; row--) {

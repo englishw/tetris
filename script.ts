@@ -17,7 +17,7 @@ type BoardCell = {
 
 const board: BoardCell[][] = Array.from(
     { length: grid.rows },
-    () => Array(grid.cols).fill({ filled: false })
+    () => Array.from({ length: grid.cols }, () => ({ filled: false }))
 );
 
 function drawGrid() {
@@ -219,7 +219,7 @@ function drawBoard() {
 
 let currentTetromino = randomTetromino();
 
-let lastDropTime = Date.now();
+let lastDropTime = 0;
 const dropInterval = 500; // milliseconds: one grid row every 0.5 seconds
 
 function gameLoop(timestamp: number) {
@@ -237,9 +237,7 @@ function gameLoop(timestamp: number) {
             // Game over check – new piece cannot be placed
             if (!currentTetromino.canMove(0, 0)) {
                 alert('Game over!');
-                for (let r = 0; r < grid.rows; r++) {
-                    board[r] = Array(grid.cols).fill({ filled: false });
-                }
+                resetBoard();
             }
         }
         lastDropTime = timestamp;
@@ -257,6 +255,15 @@ function gameLoop(timestamp: number) {
 
     // Request next frame
     requestAnimationFrame(gameLoop);
+}
+
+function resetBoard() {
+    for (let row = 0; row < grid.rows; row++) {
+        board[row] = Array.from(
+            { length: grid.cols },
+            () => ({ filled: false })
+        );
+    }
 }
 
 function clearFullRows() {
