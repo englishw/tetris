@@ -204,16 +204,19 @@ function drawSidebar() {
     const previewY = panels[2].y + 22 + boxHeight + 15;
     ctx.strokeRect(x, previewY, width, 105);
 }
+function getDropInterval() {
+    return Math.max(100, 800 - current_level * 50);
+}
 let current_level = 0;
 let score = 0;
 let lines = 0;
 const lineClearPoints = [0, 40, 100, 300, 1200];
 let currentTetromino = randomTetromino();
 let lastDropTime = 0;
-const dropInterval = 800; // milliseconds: one grid row every 0.8 seconds
+//const dropInterval = 800; // milliseconds: one grid row every 0.8 seconds
 function gameLoop(timestamp) {
     // Advance the game state only on the drop timer.
-    if (timestamp - lastDropTime >= dropInterval) {
+    if (timestamp - lastDropTime >= getDropInterval()) {
         if (currentTetromino.canMove(0, 1)) {
             currentTetromino.moveDown();
         }
