@@ -89,8 +89,9 @@ class Tetromino {
     constructor(shape: { shape: number[][], color: string }) {
         this.shape = shape.shape;
         this.color = shape.color;
+        // Start above the visible area
         this.x = Math.floor((grid.cols / 2) - (shape.shape[0].length / 2));
-        this.y = 0;
+        this.y = -1; // Adjusted to start above the grid
     }
 
     draw() {
@@ -230,7 +231,6 @@ function gameLoop(timestamp: number) {
             // Land the piece
             currentTetromino.lock();
             clearFullRows();
-
             // Spawn a new random piece at the top
             currentTetromino = randomTetromino();
 
@@ -240,19 +240,22 @@ function gameLoop(timestamp: number) {
                 for (let r = 0; r < grid.rows; r++) {
                     board[r] = Array(grid.cols).fill({ filled: false });
                 }
-                return; // End the game loop
             }
         }
-
         lastDropTime = timestamp;
     }
 
-    // Draw every animation frame.
+    // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw the grid and board
     drawGrid();
     drawBoard();
+
+    // Draw the current Tetromino
     currentTetromino.draw();
 
+    // Request next frame
     requestAnimationFrame(gameLoop);
 }
 

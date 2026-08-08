@@ -76,8 +76,9 @@ class Tetromino {
     constructor(shape) {
         this.shape = shape.shape;
         this.color = shape.color;
+        // Start above the visible area
         this.x = Math.floor((grid.cols / 2) - (shape.shape[0].length / 2));
-        this.y = 0;
+        this.y = -1; // Adjusted to start above the grid
     }
     draw() {
         ctx.fillStyle = this.color;
@@ -197,16 +198,18 @@ function gameLoop(timestamp) {
                 for (let r = 0; r < grid.rows; r++) {
                     board[r] = Array(grid.cols).fill({ filled: false });
                 }
-                return; // End the game loop
             }
         }
         lastDropTime = timestamp;
     }
-    // Draw every animation frame.
+    // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Draw the grid and board
     drawGrid();
     drawBoard();
+    // Draw the current Tetromino
     currentTetromino.draw();
+    // Request next frame
     requestAnimationFrame(gameLoop);
 }
 function clearFullRows() {
