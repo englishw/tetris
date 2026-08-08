@@ -177,6 +177,31 @@ function drawBoard() {
         }
     }
 }
+function drawSidebar() {
+    const x = grid.cols * grid.size + 10; // 210
+    const width = canvas.width - x - 10; // 100
+    const boxHeight = 55;
+    const gap = 15;
+    const panels = [
+        { label: 'SCORE', y: 20 },
+        { label: 'LEVEL', y: 20 + boxHeight + gap },
+        { label: 'LINES', y: 20 + (boxHeight + gap) * 2 },
+        { label: 'NEXT', y: 20 + (boxHeight + gap) * 3, height: 120 }
+    ];
+    ctx.strokeStyle = '#333';
+    ctx.fillStyle = '#222';
+    ctx.lineWidth = 2;
+    ctx.font = 'bold 14px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (const panel of panels) {
+        const height = panel.height ?? boxHeight;
+        // Label above its box
+        ctx.fillText(panel.label, x + width / 2, panel.y);
+        // Empty display / preview box
+        ctx.strokeRect(x, panel.y + 12, width, height);
+    }
+}
 let currentTetromino = randomTetromino();
 let lastDropTime = 0;
 const dropInterval = 500; // milliseconds: one grid row every 0.5 seconds
@@ -205,6 +230,7 @@ function gameLoop(timestamp) {
     // Draw the grid and board
     drawGrid();
     drawBoard();
+    drawSidebar();
     // Draw the current Tetromino
     currentTetromino.draw();
     // Request next frame
