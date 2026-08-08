@@ -9,7 +9,7 @@ const grid = {
     cols: 10,
     size: 20
 };
-const board = Array.from({ length: grid.rows }, () => Array(grid.cols).fill(0));
+const board = Array.from({ length: grid.rows }, () => Array(grid.cols).fill({ filled: false }));
 function drawGrid() {
     for (let row = 0; row < grid.rows; row++) {
         for (let col = 0; col < grid.cols; col++) {
@@ -133,7 +133,7 @@ class Tetromino {
         for (let i = 0; i < this.shape.length; i++) {
             for (let j = 0; j < this.shape[i].length; j++) {
                 if (this.shape[i][j]) {
-                    board[this.y + i][this.x + j] = 1;
+                    board[this.y + i][this.x + j] = { color: this.color, filled: true };
                 }
             }
         }
@@ -152,7 +152,7 @@ class Tetromino {
                     return false;
                 }
                 // Check collision with locked blocks
-                if (board[newY][newX]) {
+                if (board[newY][newX] && board[newY][newX].filled) {
                     return false;
                 }
             }
@@ -169,7 +169,8 @@ function drawBoard() {
     ctx.fillStyle = 'blue';
     for (let row = 0; row < grid.rows; row++) {
         for (let col = 0; col < grid.cols; col++) {
-            if (board[row][col]) {
+            if (board[row][col] && board[row][col].filled) {
+                ctx.fillStyle = board[row][col].color || 'blue';
                 ctx.fillRect(col * grid.size, row * grid.size, grid.size, grid.size);
             }
         }
@@ -194,8 +195,9 @@ function gameLoop(timestamp) {
             if (!currentTetromino.canMove(0, 0)) {
                 alert('Game over!');
                 for (let r = 0; r < grid.rows; r++) {
-                    board[r].fill(0);
+                    board[r] = Array(grid.cols).fill({ filled: false });
                 }
+                return; // End the game loop
             }
         }
         lastDropTime = timestamp;

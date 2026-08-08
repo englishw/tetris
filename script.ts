@@ -10,9 +10,14 @@ const grid = {
     size: 20
 };
 
-const board: number[][] = Array.from(
+type BoardCell = {
+    color?: string;
+    filled: boolean;
+};
+
+const board: BoardCell[][] = Array.from(
     { length: grid.rows },
-    () => Array(grid.cols).fill(0)
+    () => Array(grid.cols).fill({ filled: false })
 );
 
 function drawGrid() {
@@ -110,80 +115,80 @@ class Tetromino {
     moveRight() {
         this.x++;
     }
-	
-	rotateShape(shape: number[][]): number[][] {
-    const newShape: number[][] = [];
-    for (let i = 0; i < shape[0].length; i++) {
-        const newRow: number[] = [];
-        for (let j = shape.length - 1; j >= 0; j--) {
-            newRow.push(shape[j][i]);
-        }
-        newShape.push(newRow);
-    }
-    return newShape;
-}
 
-tryRotate() {
-    const rotated = this.rotateShape(this.shape);
-
-    // Check the rotated shape against board and walls
-    for (let i = 0; i < rotated.length; i++) {
-        for (let j = 0; j < rotated[i].length; j++) {
-            if (!rotated[i][j]) continue;
-
-            const newX = this.x + j;
-            const newY = this.y + i;
-
-            if (
-                newX < 0 ||
-                newX >= grid.cols ||
-                newY < 0 ||
-                newY >= grid.rows ||
-                board[newY][newX]
-            ) {
-                return; // invalid rotation, do nothing
+    rotateShape(shape: number[][]): number[][] {
+        const newShape: number[][] = [];
+        for (let i = 0; i < shape[0].length; i++) {
+            const newRow: number[] = [];
+            for (let j = shape.length - 1; j >= 0; j--) {
+                newRow.push(shape[j][i]);
             }
+            newShape.push(newRow);
         }
+        return newShape;
     }
 
-    this.shape = rotated;
-}
+    tryRotate() {
+        const rotated = this.rotateShape(this.shape);
 
-    lock() {
-        for (let i = 0; i < this.shape.length; i++) {
-            for (let j = 0; j < this.shape[i].length; j++) {
-                if (this.shape[i][j]) {
-                    board[this.y + i][this.x + j] = 1;
+        // Check the rotated shape against board and walls
+        for (let i = 0; i < rotated.length; i++) {
+            for (let j = 0; j < rotated[i].length; j++) {
+                if (!rotated[i][j]) continue;
+
+                const newX = this.x + j;
+                const newY = this.y + i;
+
+                if (
+                    newX < 0 ||
+                    newX >= grid.cols ||
+                    newY < 0 ||
+                    newY >= grid.rows ||
+                    board[newY][newX]
+                ) {
+                    return; // invalid rotation, do nothing
                 }
             }
         }
+
+        this.shape = rotated;
     }
 
-    canMove(dx: number, dy: number): boolean {
+    lock() {
     for (let i = 0; i < this.shape.length; i++) {
         for (let j = 0; j < this.shape[i].length; j++) {
-            if (!this.shape[i][j]) continue;
-
-            const newX = this.x + j + dx;
-            const newY = this.y + i + dy;
-
-            // Check walls and bottom
-            if (
-                newX < 0 ||
-                newX >= grid.cols ||
-                newY >= grid.rows
-            ) {
-                return false;
-            }
-
-            // Check collision with locked blocks
-            if (board[newY][newX]) {
-                return false;
+            if (this.shape[i][j]) {
+                board[this.y + i][this.x + j] = { color: this.color, filled: true };
             }
         }
     }
-    return true;
 }
+
+    canMove(dx: number, dy: number): boolean {
+        for (let i = 0; i < this.shape.length; i++) {
+            for (let j = 0; j < this.shape[i].length; j++) {
+                if (!this.shape[i][j]) continue;
+
+                const newX = this.x + j + dx;
+                const newY = this.y + i + dy;
+
+                // Check walls and bottom
+                if (
+                    newX < 0 ||
+                    newX >= grid.cols ||
+                    newY >= grid.rows
+                ) {
+                    return false;
+                }
+
+                // Check collision with locked blocks
+                if (board[newY][newX] && board[newY][newX].filled) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 }
 
 const tetrominoKeys = Object.keys(tetrominoes);
@@ -198,7 +203,8 @@ function drawBoard() {
 
     for (let row = 0; row < grid.rows; row++) {
         for (let col = 0; col < grid.cols; col++) {
-            if (board[row][col]) {
+            if (board[row][col] && board[row][col].filled) {
+                ctx.fillStyle = board[row][col].color || 'blue';
                 ctx.fillRect(
                     col * grid.size,
                     row * grid.size,
@@ -232,8 +238,9 @@ function gameLoop(timestamp: number) {
             if (!currentTetromino.canMove(0, 0)) {
                 alert('Game over!');
                 for (let r = 0; r < grid.rows; r++) {
-                    board[r].fill(0);
+                    board[r] = Array(grid.cols).fill({ filled: false });
                 }
+                return; // End the game loop
             }
         }
 
