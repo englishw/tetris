@@ -34,49 +34,49 @@ const tetrominoes: { [key: string]: { shape: number[][], color: string } } = {
         shape: [
             [1, 1, 1, 1]
         ],
-        color: 'lightblue'
+        color: '#00FFFF' // Light blue
     },
     'O': {
         shape: [
             [1, 1],
             [1, 1]
         ],
-        color: 'yellow'
+        color: '#FFFF00' // Yellow
     },
     'T': {
         shape: [
             [0, 1, 0],
             [1, 1, 1]
         ],
-        color: 'purple'
+        color: '#8A2BE2' // Purple
     },
     'S': {
         shape: [
             [0, 1, 1],
             [1, 1, 0]
         ],
-        color: 'green'
+        color: '#7FFF00' // Green
     },
     'Z': {
         shape: [
             [1, 1, 0],
             [0, 1, 1]
         ],
-        color: 'red'
+        color: '#FF0000' // Red
     },
     'J': {
         shape: [
             [1, 0, 0],
             [1, 1, 1]
         ],
-        color: 'darkblue'
+        color: '#0000FF' // Dark blue
     },
     'L': {
         shape: [
             [0, 0, 1],
             [1, 1, 1]
         ],
-        color: 'orange'
+        color: '#FFA500' // Orange
     }
 };
 
