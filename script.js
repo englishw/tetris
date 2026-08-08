@@ -178,7 +178,7 @@ function drawBoard() {
     }
 }
 let currentTetromino = randomTetromino();
-let lastDropTime = 0;
+let lastDropTime = Date.now();
 const dropInterval = 500; // milliseconds: one grid row every 0.5 seconds
 function gameLoop(timestamp) {
     // Advance the game state only on the drop timer.
