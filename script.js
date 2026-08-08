@@ -123,7 +123,7 @@ class Tetromino {
                     newX >= grid.cols ||
                     newY < 0 ||
                     newY >= grid.rows ||
-                    board[newY][newX]) {
+                    board[newY][newX].filled) {
                     return; // invalid rotation, do nothing
                 }
             }
