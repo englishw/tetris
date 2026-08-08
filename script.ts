@@ -270,7 +270,7 @@ function clearFullRows() {
     for (let row = grid.rows - 1; row >= 0; row--) {
         let isRowFull = true;
         for (let col = 0; col < grid.cols; col++) {
-            if (!board[row][col]) {
+            if (!board[row][col].filled) {
                 isRowFull = false;
                 break;
             }
