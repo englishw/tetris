@@ -218,10 +218,10 @@ function drawBoard() {
 }
 
 function drawSidebar() {
-    const x = grid.cols * grid.size + 10; // 210
-    const width = canvas.width - x - 10;  // 100
+    const x = grid.cols * grid.size + 10;
+    const width = canvas.width - x - 10;
     const boxHeight = 55;
-    const gap = 17;
+    const gap = 35; // was 17
 
     const panels = [
         { label: 'SCORE', y: 20 },
@@ -231,7 +231,7 @@ function drawSidebar() {
     ];
 
     ctx.strokeStyle = '#dadada';
-    ctx.fillStyle = '#222';
+    ctx.fillStyle = '#ffffff'; // was '#222'
     ctx.lineWidth = 2;
     ctx.font = 'bold 14px Arial';
     ctx.textAlign = 'center';
@@ -240,11 +240,10 @@ function drawSidebar() {
     for (const panel of panels) {
         const height = panel.height ?? boxHeight;
 
-        // Label above its box
         ctx.fillText(panel.label, x + width / 2, panel.y);
 
-        // Empty display / preview box
-        ctx.strokeRect(x, panel.y + 12, width, height);
+        // was panel.y + 12
+        ctx.strokeRect(x, panel.y + 22, width, height);
     }
 }
 
