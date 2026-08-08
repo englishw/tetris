@@ -91,7 +91,7 @@ class Tetromino {
         this.color = shape.color;
         // Start above the visible area
         this.x = Math.floor((grid.cols / 2) - (shape.shape[0].length / 2));
-        this.y = -1; // Adjusted to start above the grid
+        this.y = 0; // Adjusted to start above the grid
     }
 
     draw() {
