@@ -224,10 +224,10 @@ function drawSidebar() {
     const gap = 35; // was 17
 
     const panels = [
-        { label: 'SCORE', y: 20 },
-        { label: 'LEVEL', y: 20 + boxHeight + gap },
-        { label: 'LINES', y: 20 + (boxHeight + gap) * 2 },
-        { label: 'NEXT', y: 20 + (boxHeight + gap) * 3, height: 120 }
+        { label: 'SCORE', y: 0 },
+        { label: 'LEVEL', y: 0 + boxHeight + gap },
+        { label: 'LINES', y: 0 + (boxHeight + gap) * 2 },
+        { label: 'NEXT', y: 0 + (boxHeight + gap) * 3, height: 120 }
     ];
 
     ctx.strokeStyle = '#dadada';
