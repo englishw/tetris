@@ -181,12 +181,12 @@ function drawSidebar() {
     const x = grid.cols * grid.size + 10;
     const width = canvas.width - x - 10;
     const boxHeight = 55;
-    const gap = 35; // was 17
+    const gap = 25; // was 35
     const panels = [
-        { label: 'SCORE', y: 0 },
-        { label: 'LEVEL', y: 0 + boxHeight + gap },
-        { label: 'LINES', y: 0 + (boxHeight + gap) * 2 },
-        { label: 'NEXT', y: 0 + (boxHeight + gap) * 3, height: 120 }
+        { label: 'SCORE', y: 20 },
+        { label: 'LEVEL', y: 20 + boxHeight + gap },
+        { label: 'LINES', y: 20 + (boxHeight + gap) * 2 },
+        { label: 'NEXT', y: 20 + (boxHeight + gap) * 3, height: 120 }
     ];
     ctx.strokeStyle = '#dadada';
     ctx.fillStyle = '#ffffff'; // was '#222'
