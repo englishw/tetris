@@ -24,33 +24,72 @@ function drawGrid() {
     }
 }
 
-const tetrominoes: { [key: string]: number[][] } = {
-    'I': [
-        [1, 1, 1, 1]
-    ],
-    'O': [
-        [1, 1],
-        [1, 1]
-    ],
-    'T': [
-        [0, 1, 0],
-        [1, 1, 1]
-    ]
+const tetrominoes: { [key: string]: { shape: number[][], color: string } } = {
+    'I': {
+        shape: [
+            [1, 1, 1, 1]
+        ],
+        color: 'lightblue'
+    },
+    'O': {
+        shape: [
+            [1, 1],
+            [1, 1]
+        ],
+        color: 'yellow'
+    },
+    'T': {
+        shape: [
+            [0, 1, 0],
+            [1, 1, 1]
+        ],
+        color: 'purple'
+    },
+    'S': {
+        shape: [
+            [0, 1, 1],
+            [1, 1, 0]
+        ],
+        color: 'green'
+    },
+    'Z': {
+        shape: [
+            [1, 1, 0],
+            [0, 1, 1]
+        ],
+        color: 'red'
+    },
+    'J': {
+        shape: [
+            [1, 0, 0],
+            [1, 1, 1]
+        ],
+        color: 'darkblue'
+    },
+    'L': {
+        shape: [
+            [0, 0, 1],
+            [1, 1, 1]
+        ],
+        color: 'orange'
+    }
 };
 
 class Tetromino {
     private shape: number[][];
     private x: number;
     private y: number;
+    private color: string;
 
-    constructor(shape: number[][]) {
-        this.shape = shape;
-        this.x = Math.floor((grid.cols / 2) - (shape[0].length / 2));
+    constructor(shape: { shape: number[][], color: string }) {
+        this.shape = shape.shape;
+        this.color = shape.color;
+        this.x = Math.floor((grid.cols / 2) - (shape.shape[0].length / 2));
         this.y = 0;
     }
 
     draw() {
-        ctx.fillStyle = 'blue';
+        ctx.fillStyle = this.color;
         for (let i = 0; i < this.shape.length; i++) {
             for (let j = 0; j < this.shape[i].length; j++) {
                 if (this.shape[i][j]) {
