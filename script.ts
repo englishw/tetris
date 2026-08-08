@@ -221,30 +221,30 @@ function drawSidebar() {
     const x = grid.cols * grid.size + 10;
     const width = canvas.width - x - 10;
     const boxHeight = 55;
-    const gap = 25; // was 35
+    const gap = 35;
 
     const panels = [
         { label: 'SCORE', y: 20 },
         { label: 'LEVEL', y: 20 + boxHeight + gap },
-        { label: 'LINES', y: 20 + (boxHeight + gap) * 2 },
-        { label: 'NEXT', y: 20 + (boxHeight + gap) * 3, height: 120 }
+        { label: 'LINES', y: 20 + (boxHeight + gap) * 2 }
     ];
 
     ctx.strokeStyle = '#dadada';
-    ctx.fillStyle = '#ffffff'; // was '#222'
+    ctx.fillStyle = '#ffffff';
     ctx.lineWidth = 2;
     ctx.font = 'bold 14px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
+    // Score, level, and lines: label followed by its box
     for (const panel of panels) {
-        const height = panel.height ?? boxHeight;
-
         ctx.fillText(panel.label, x + width / 2, panel.y);
-
-        // was panel.y + 12
-        ctx.strokeRect(x, panel.y + 22, width, height);
+        ctx.strokeRect(x, panel.y + 22, width, boxHeight);
     }
+
+    // Preview: no label, so it can begin shortly below the Lines box.
+    const previewY = panels[2].y + 22 + boxHeight + 15;
+    ctx.strokeRect(x, previewY, width, 105);
 }
 
 let currentTetromino = randomTetromino();
