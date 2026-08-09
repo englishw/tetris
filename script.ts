@@ -335,6 +335,39 @@ function drawSidebar() {        // Function to draw the sidebar with score, leve
     nextTetromino.drawPreview(x, previewY, width, 105);
 }
 
+function drawInstructions() {
+    const x = 12;
+    let y = 430;
+    const lineHeight = 16;
+
+    ctx.fillStyle = '#dadada';
+    ctx.font = 'bold 12px Arial';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+
+    ctx.fillText('HOW TO PLAY', x, y);
+    y += lineHeight * 1.5;
+
+    ctx.font = '11px Arial';
+
+    const helpLines = [
+        'Tap / W / Up: Rotate',
+        'Drag left/right / A,D / Arrows: Move',
+        'Drag down and hold / S / Down: Soft drop',
+        'Quick long downward swipe: Hard drop',
+        '',
+        'Score: Soft drop = 1 per row',
+        'Hard drop = 2 per row',
+        'Lines: 1 = 40, 2 = 100, 3 = 300, 4 = 1200',
+        'Points are multiplied by your level.'
+    ];
+
+    for (const line of helpLines) {
+        ctx.fillText(line, x, y);
+        y += lineHeight;
+    }
+}
+
 function getDropInterval(): number {        // Function to get the drop interval based on the current level
     return Math.max(100, 800 - current_level * 50);
 }
@@ -371,6 +404,7 @@ function gameLoop(timestamp: number) {          // Main game loop function
     drawPlayfield();
     drawBoard();
     drawSidebar();
+    drawInstructions();
 
     // Draw this after the locked board so the active piece appears on top.
     currentTetromino.draw();
@@ -499,12 +533,43 @@ let touchStartY = 0;
 let lastMoveX = 0;
 let lastMoveY = 0;
 let activePointerId: number | null = null;
-let hardDropUsedThisGesture = false;
+let touchStartTime = 0;
+let softDropTimer: number | null = null;
 
 const swipeDistance = 30;
 const tapDistance = 12;
 
+// Require a deliberate, fairly long, quick downward gesture for a hard drop.
+const hardDropDistance = 90;
+const hardDropMaxDuration = 250;
+
+// How quickly a held downward gesture repeats softDrop().
+const softDropInterval = 120;
+
+
+function stopSoftDrop() {
+    if (softDropTimer !== null) {
+        window.clearInterval(softDropTimer);
+        softDropTimer = null;
+    }
+}
+
+function startSoftDrop() {
+    if (softDropTimer !== null) return;
+
+    // Drop one row immediately, then continue while the finger remains held.
+    softDrop();
+
+    softDropTimer = window.setInterval(() => {
+        softDrop();
+    }, softDropInterval);
+}
+
+
 canvas.addEventListener('pointerdown', (e) => {
+    // Ignore a second finger while another gesture is active.
+    if (activePointerId !== null) return;
+
     e.preventDefault();
 
     const rect = canvas.getBoundingClientRect();
@@ -516,14 +581,14 @@ canvas.addEventListener('pointerdown', (e) => {
     lastMoveX = x;
     lastMoveY = y;
     activePointerId = e.pointerId;
+    touchStartTime = performance.now();
 
-    // Keep receiving movement/up events even if the finger leaves the canvas.
     canvas.setPointerCapture(e.pointerId);
-    hardDropUsedThisGesture = false;
 });
 
+
 canvas.addEventListener('pointermove', (e) => {
-    if (e.pointerId !== activePointerId || hardDropUsedThisGesture) return;
+    if (e.pointerId !== activePointerId) return;
 
     e.preventDefault();
 
@@ -531,21 +596,26 @@ canvas.addEventListener('pointermove', (e) => {
     const currentX = (e.clientX - rect.left) * (canvas.width / rect.width);
     const currentY = (e.clientY - rect.top) * (canvas.height / rect.height);
 
+    const totalDeltaX = currentX - touchStartX;
+    const totalDeltaY = currentY - touchStartY;
     const deltaX = currentX - lastMoveX;
     const deltaY = currentY - lastMoveY;
 
-    // Downward swipe: hard-drop and lock the piece.
-    if (deltaY >= swipeDistance && Math.abs(deltaY) > Math.abs(deltaX)) {
-    hardDrop();
-
-    // Ignore further movement until this finger is released.
-    hardDropUsedThisGesture = true;
-
-    return;
-}
+    // A deliberate downward drag begins a repeating soft drop.
+    // It does NOT hard-drop here; hard drop is evaluated on pointer release.
+    if (
+        totalDeltaY >= swipeDistance &&
+        Math.abs(totalDeltaY) > Math.abs(totalDeltaX)
+    ) {
+        startSoftDrop();
+        return;
+    }
 
     // Horizontal drag/swipe: move once per swipeDistance crossed.
-    if (Math.abs(deltaX) >= swipeDistance && Math.abs(deltaX) > Math.abs(deltaY)) {
+    if (
+        Math.abs(deltaX) >= swipeDistance &&
+        Math.abs(deltaX) > Math.abs(deltaY)
+    ) {
         if (deltaX < 0) {
             if (currentTetromino.canMove(-1, 0)) {
                 currentTetromino.moveLeft();
@@ -556,16 +626,17 @@ canvas.addEventListener('pointermove', (e) => {
             }
         }
 
-        // Reset only the horizontal reference point, allowing repeated movement
-        // while the player continues dragging/holding left or right.
         lastMoveX = currentX;
+        lastMoveY = currentY;
     }
 });
+
 
 canvas.addEventListener('pointerup', (e) => {
     if (e.pointerId !== activePointerId) return;
 
     e.preventDefault();
+    stopSoftDrop();
 
     const rect = canvas.getBoundingClientRect();
     const touchEndX = (e.clientX - rect.left) * (canvas.width / rect.width);
@@ -573,9 +644,19 @@ canvas.addEventListener('pointerup', (e) => {
 
     const totalDeltaX = touchEndX - touchStartX;
     const totalDeltaY = touchEndY - touchStartY;
+    const gestureDuration = performance.now() - touchStartTime;
 
-    // A small, stationary tap rotates the piece.
+    // A quick, clearly vertical, long downward swipe hard-drops the piece.
     if (
+        totalDeltaY >= hardDropDistance &&
+        Math.abs(totalDeltaY) > Math.abs(totalDeltaX) &&
+        gestureDuration <= hardDropMaxDuration
+    ) {
+        hardDrop();
+    }
+
+    // A small stationary tap rotates the piece.
+    else if (
         Math.abs(totalDeltaX) < tapDistance &&
         Math.abs(totalDeltaY) < tapDistance
     ) {
@@ -587,19 +668,22 @@ canvas.addEventListener('pointerup', (e) => {
     }
 
     activePointerId = null;
-    hardDropUsedThisGesture = false;
 });
 
 canvas.addEventListener('pointercancel', (e) => {
-    if (e.pointerId === activePointerId) {
-        activePointerId = null;
-        touchStartX = 0;
-        touchStartY = 0;
-        lastMoveX = 0;
-        lastMoveY = 0;
-        hardDropUsedThisGesture = false;
+    if (e.pointerId !== activePointerId) return;
+
+    stopSoftDrop();
+
+    if (canvas.hasPointerCapture(e.pointerId)) {
+        canvas.releasePointerCapture(e.pointerId);
     }
-    
+
+    activePointerId = null;
+    touchStartX = 0;
+    touchStartY = 0;
+    lastMoveX = 0;
+    lastMoveY = 0;
 });
 
 gameLoop(0);
