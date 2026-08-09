@@ -10,6 +10,7 @@ const grid = {
     size: 20
 };
 const board = Array.from({ length: grid.rows }, () => Array.from({ length: grid.cols }, () => ({ filled: false })));
+/*  Replacing drawGrid() with palette and drawPlayfield()
 function drawGrid() {
     for (let row = 0; row < grid.rows; row++) {
         for (let col = 0; col < grid.cols; col++) {
@@ -17,6 +18,64 @@ function drawGrid() {
             ctx.strokeRect(col * grid.size, row * grid.size, grid.size, grid.size);
         }
     }
+}
+*/
+const palette = {
+    page: '#090817',
+    cabinet: '#171339',
+    playfield: '#211d59',
+    playfieldEdge: '#655786',
+    shadow: '#100d35',
+    emptySpeck: '#302a75'
+};
+function drawPlayfield() {
+    const width = grid.cols * grid.size;
+    const height = grid.rows * grid.size;
+    // Main dark-purple well: no cell outlines.
+    ctx.fillStyle = palette.playfield;
+    ctx.fillRect(0, 0, width, height);
+    // Pixel-art bezel/shadow at the edges.
+    ctx.fillStyle = palette.shadow;
+    ctx.fillRect(0, 0, 4, height);
+    ctx.fillRect(width - 4, 0, 4, height);
+    ctx.fillStyle = palette.playfieldEdge;
+    ctx.fillRect(4, 0, 2, height);
+    ctx.fillRect(width - 6, 0, 2, height);
+    // A few subtle background pixels add visual depth without becoming a grid.
+    ctx.fillStyle = palette.emptySpeck;
+    for (const [x, y] of [[2, 2], [5, 5], [8, 8], [3, 13], [7, 17]]) {
+        ctx.fillRect(x * grid.size + 8, y * grid.size + 9, 3, 3);
+    }
+}
+function shadeColor(hex, amount) {
+    const value = parseInt(hex.slice(1), 16);
+    const r = Math.max(0, Math.min(255, (value >> 16) + amount));
+    const g = Math.max(0, Math.min(255, ((value >> 8) & 0xff) + amount));
+    const b = Math.max(0, Math.min(255, (value & 0xff) + amount));
+    return `rgb(${r}, ${g}, ${b})`;
+}
+function drawBlock(col, row, color) {
+    const x = col * grid.size;
+    const y = row * grid.size;
+    const gap = 1;
+    const size = grid.size - gap * 2;
+    // Dark pixel outline / separation between occupied blocks.
+    ctx.fillStyle = shadeColor(color, -90);
+    ctx.fillRect(x + gap, y + gap, size, size);
+    // Main colored square.
+    ctx.fillStyle = color;
+    ctx.fillRect(x + 3, y + 3, grid.size - 6, grid.size - 6);
+    // Bright upper-left highlight.
+    ctx.fillStyle = shadeColor(color, 55);
+    ctx.fillRect(x + 4, y + 4, grid.size - 8, 3);
+    ctx.fillRect(x + 4, y + 4, 3, grid.size - 8);
+    // Dark lower-right edge for the chunky, tiled look.
+    ctx.fillStyle = shadeColor(color, -45);
+    ctx.fillRect(x + 4, y + grid.size - 7, grid.size - 8, 3);
+    ctx.fillRect(x + grid.size - 7, y + 4, 3, grid.size - 8);
+    // Small inner texture square.
+    ctx.fillStyle = shadeColor(color, 25);
+    ctx.fillRect(x + 8, y + 8, 4, 4);
 }
 const tetrominoes = {
     'I': {
@@ -80,12 +139,23 @@ class Tetromino {
         this.x = Math.floor((grid.cols / 2) - (shape.shape[0].length / 2));
         this.y = 0; // Adjusted to start above the grid
     }
+    /*   Replaced for better visual style
     draw() {
         ctx.fillStyle = this.color;
         for (let i = 0; i < this.shape.length; i++) {
             for (let j = 0; j < this.shape[i].length; j++) {
                 if (this.shape[i][j]) {
                     ctx.fillRect((this.x + j) * grid.size, (this.y + i) * grid.size, grid.size, grid.size);
+                }
+            }
+        }
+    }
+        */
+    draw() {
+        for (let i = 0; i < this.shape.length; i++) {
+            for (let j = 0; j < this.shape[i].length; j++) {
+                if (this.shape[i][j]) {
+                    drawBlock(this.x + j, this.y + i, this.color);
                 }
             }
         }
@@ -166,13 +236,31 @@ function randomTetromino() {
     const key = tetrominoKeys[Math.floor(Math.random() * tetrominoKeys.length)];
     return new Tetromino(tetrominoes[key]);
 }
+/*  Replaced for better visual style
 function drawBoard() {
     ctx.fillStyle = 'blue';
+
     for (let row = 0; row < grid.rows; row++) {
         for (let col = 0; col < grid.cols; col++) {
             if (board[row][col] && board[row][col].filled) {
                 ctx.fillStyle = board[row][col].color || 'blue';
-                ctx.fillRect(col * grid.size, row * grid.size, grid.size, grid.size);
+                ctx.fillRect(
+                    col * grid.size,
+                    row * grid.size,
+                    grid.size,
+                    grid.size
+                );
+            }
+        }
+    }
+}
+*/
+function drawBoard() {
+    for (let row = 0; row < grid.rows; row++) {
+        for (let col = 0; col < grid.cols; col++) {
+            const cell = board[row][col];
+            if (cell.filled && cell.color) {
+                drawBlock(col, row, cell.color);
             }
         }
     }
@@ -243,7 +331,8 @@ function gameLoop(timestamp) {
     // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     // Draw the grid and board
-    drawGrid();
+    //drawGrid();
+    drawPlayfield();
     drawBoard();
     drawSidebar();
     // Draw the current Tetromino
