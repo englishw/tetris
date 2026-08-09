@@ -1,99 +1,92 @@
+/*
+*   TETRIS clone, based on Gameboy versions of the classic game
+*   Bill English, 2026
+*/
 const canvas = document.createElement('canvas');
 canvas.width = 320;
 canvas.height = 640;
 const ctx = canvas.getContext('2d')!;
 document.getElementById('game-container')!.appendChild(canvas);
 
-const grid = {
+const grid = {      // Define the grid size and dimensions
     rows: 20,
     cols: 10,
     size: 20
 };
 
-type BoardCell = {
+type BoardCell = {      // Define a type for board cells
     color?: string;
     filled: boolean;
 };
 
-const board: BoardCell[][] = Array.from(
+const board: BoardCell[][] = Array.from(    // Initialize the game board with empty cells
     { length: grid.rows },
     () => Array.from({ length: grid.cols }, () => ({ filled: false }))
 );
 
-/*  Replacing drawGrid() with palette and drawPlayfield()
-function drawGrid() {
-    for (let row = 0; row < grid.rows; row++) {
-        for (let col = 0; col < grid.cols; col++) {
-            ctx.strokeStyle = '#ddd';
-            ctx.strokeRect(col * grid.size, row * grid.size, grid.size, grid.size);
-        }
-    }
-}
-*/
-
-const palette = {
-  page: '#090817',
-  cabinet: '#171339',
-  playfield: '#211d59',
-  playfieldEdge: '#655786',
-  shadow: '#100d35',
-  emptySpeck: '#302a75'
+const palette = {   // Define the color palette for different elements in the game
+    page: '#090817',
+    cabinet: '#171339',
+    playfield: '#211d59',
+    playfieldEdge: '#655786',
+    shadow: '#100d35',
+    emptySpeck: '#302a75'
 };
 
-function drawPlayfield() {
-  const width = grid.cols * grid.size;
-  const height = grid.rows * grid.size;
+function drawPlayfield() {      // Function to draw the main game playfield
+    const width = grid.cols * grid.size;
+    const height = grid.rows * grid.size;
 
-  // Main dark-purple well: no cell outlines or overlapping bezel.
-  ctx.fillStyle = palette.playfield;
-  ctx.fillRect(0, 0, width, height);
+    // Main dark-purple well
+    ctx.fillStyle = palette.playfield;
+    ctx.fillRect(0, 0, width, height);
 
-  // A few subtle background pixels add visual depth without becoming a grid.
-  ctx.fillStyle = palette.emptySpeck;
-  for (const [x, y] of [[2, 2], [5, 5], [8, 8], [3, 13], [7, 17]]) {
-    ctx.fillRect(x * grid.size + 8, y * grid.size + 9, 3, 3);
-  }
+    // A few subtle background pixels add visual depth
+    ctx.fillStyle = palette.emptySpeck;
+    for (const [x, y] of [[2, 2], [5, 5], [8, 8], [3, 13], [7, 17]]) {
+        ctx.fillRect(x * grid.size + 8, y * grid.size + 9, 3, 3);
+    }
 }
 
-function shadeColor(hex: string, amount: number): string {
-  const value = parseInt(hex.slice(1), 16);
-  const r = Math.max(0, Math.min(255, (value >> 16) + amount));
-  const g = Math.max(0, Math.min(255, ((value >> 8) & 0xff) + amount));
-  const b = Math.max(0, Math.min(255, (value & 0xff) + amount));
+function shadeColor(hex: string, amount: number): string {  // Function to shade a color by a given amount
+    const value = parseInt(hex.slice(1), 16);
+    const r = Math.max(0, Math.min(255, (value >> 16) + amount));
+    const g = Math.max(0, Math.min(255, ((value >> 8) & 0xff) + amount));
+    const b = Math.max(0, Math.min(255, (value & 0xff) + amount));
 
-  return `rgb(${r}, ${g}, ${b})`;
+    return `rgb(${r}, ${g}, ${b})`;
 }
 
-function drawBlock(col: number, row: number, color: string) {
-  const x = col * grid.size;
-  const y = row * grid.size;
-  const gap = 1;
-  const size = grid.size - gap * 2;
+function drawBlock(col: number, row: number, color: string) {   // Function to draw a block on the board
+    const x = col * grid.size;
+    const y = row * grid.size;
+    const gap = 1;
+    const size = grid.size - gap * 2;
 
-  // Dark pixel outline / separation between occupied blocks.
-  ctx.fillStyle = shadeColor(color, -90);
-  ctx.fillRect(x + gap, y + gap, size, size);
+    // Dark pixel outline / separation between occupied blocks.
+    ctx.fillStyle = shadeColor(color, -90);
+    ctx.fillRect(x + gap, y + gap, size, size);
 
-  // Main colored square.
-  ctx.fillStyle = color;
-  ctx.fillRect(x + 3, y + 3, grid.size - 6, grid.size - 6);
+    // Main colored square.
+    ctx.fillStyle = color;
+    ctx.fillRect(x + 3, y + 3, grid.size - 6, grid.size - 6);
 
-  // Bright upper-left highlight.
-  ctx.fillStyle = shadeColor(color, 55);
-  ctx.fillRect(x + 4, y + 4, grid.size - 8, 3);
-  ctx.fillRect(x + 4, y + 4, 3, grid.size - 8);
+    // Bright upper-left highlight.
+    ctx.fillStyle = shadeColor(color, 55);
+    ctx.fillRect(x + 4, y + 4, grid.size - 8, 3);
+    ctx.fillRect(x + 4, y + 4, 3, grid.size - 8);
 
-  // Dark lower-right edge for the chunky, tiled look.
-  ctx.fillStyle = shadeColor(color, -45);
-  ctx.fillRect(x + 4, y + grid.size - 7, grid.size - 8, 3);
-  ctx.fillRect(x + grid.size - 7, y + 4, 3, grid.size - 8);
+    // Dark lower-right edge for the chunky, tiled look.
+    ctx.fillStyle = shadeColor(color, -45);
+    ctx.fillRect(x + 4, y + grid.size - 7, grid.size - 8, 3);
+    ctx.fillRect(x + grid.size - 7, y + 4, 3, grid.size - 8);
 
-  // Small inner texture square.
-  ctx.fillStyle = shadeColor(color, 25);
-  ctx.fillRect(x + 8, y + 8, 4, 4);
+    // Small inner texture square.
+    ctx.fillStyle = shadeColor(color, 25);
+    ctx.fillRect(x + 8, y + 8, 4, 4);
 }
 
-const tetrominoes: { [key: string]: { shape: number[][], color: string } } = {
+const tetrominoes: { [key: string]: { shape: number[][], color: string } } = {  // Define the different tetromino shapes and their colors
     'I': {
         shape: [
             [1, 1, 1, 1]
@@ -144,7 +137,7 @@ const tetrominoes: { [key: string]: { shape: number[][], color: string } } = {
     }
 };
 
-class Tetromino {
+class Tetromino {           // Class to represent a tetromino piece
     private shape: number[][];
     private x: number;
     private y: number;
@@ -153,63 +146,51 @@ class Tetromino {
     constructor(shape: { shape: number[][], color: string }) {
         this.shape = shape.shape;
         this.color = shape.color;
-        // Start above the visible area
         this.x = Math.floor((grid.cols / 2) - (shape.shape[0].length / 2));
         this.y = 0; // Adjusted to start above the grid
     }
 
-    /*   Replaced for better visual style
-    draw() {
-        ctx.fillStyle = this.color;
+    // Draw the tetromino on the board
+    draw() {    
         for (let i = 0; i < this.shape.length; i++) {
             for (let j = 0; j < this.shape[i].length; j++) {
                 if (this.shape[i][j]) {
-                    ctx.fillRect((this.x + j) * grid.size, (this.y + i) * grid.size, grid.size, grid.size);
+                    drawBlock(this.x + j, this.y + i, this.color);
                 }
             }
         }
     }
-        */
 
-    draw() {
-      for (let i = 0; i < this.shape.length; i++) {
-        for (let j = 0; j < this.shape[i].length; j++) {
-            if (this.shape[i][j]) {
-            drawBlock(this.x + j, this.y + i, this.color);
-        }
-        }
-    }
-}
-
+    // Draw a preview of the tetromino in the sidebar
     drawPreview(boxX: number, boxY: number, boxWidth: number, boxHeight: number) {
-  const previewSize = 16;
-  const pieceWidth = this.shape[0].length * previewSize;
-  const pieceHeight = this.shape.length * previewSize;
+        const previewSize = 16;
+        const pieceWidth = this.shape[0].length * previewSize;
+        const pieceHeight = this.shape.length * previewSize;
 
-  const startX = boxX + (boxWidth - pieceWidth) / 2;
-  const startY = boxY + (boxHeight - pieceHeight) / 2;
+        const startX = boxX + (boxWidth - pieceWidth) / 2;
+        const startY = boxY + (boxHeight - pieceHeight) / 2;
 
-  for (let i = 0; i < this.shape.length; i++) {
-    for (let j = 0; j < this.shape[i].length; j++) {
-      if (!this.shape[i][j]) continue;
+        for (let i = 0; i < this.shape.length; i++) {
+            for (let j = 0; j < this.shape[i].length; j++) {
+                if (!this.shape[i][j]) continue;
 
-      const x = startX + j * previewSize;
-      const y = startY + i * previewSize;
+                const x = startX + j * previewSize;
+                const y = startY + i * previewSize;
 
-      ctx.fillStyle = shadeColor(this.color, -90);
-      ctx.fillRect(x, y, previewSize, previewSize);
+                ctx.fillStyle = shadeColor(this.color, -90);
+                ctx.fillRect(x, y, previewSize, previewSize);
 
-      ctx.fillStyle = this.color;
-      ctx.fillRect(x + 2, y + 2, previewSize - 4, previewSize - 4);
+                ctx.fillStyle = this.color;
+                ctx.fillRect(x + 2, y + 2, previewSize - 4, previewSize - 4);
 
-      ctx.fillStyle = shadeColor(this.color, 55);
-      ctx.fillRect(x + 3, y + 3, previewSize - 6, 2);
+                ctx.fillStyle = shadeColor(this.color, 55);
+                ctx.fillRect(x + 3, y + 3, previewSize - 6, 2);
 
-      ctx.fillStyle = shadeColor(this.color, -45);
-      ctx.fillRect(x + 3, y + previewSize - 5, previewSize - 6, 2);
+                ctx.fillStyle = shadeColor(this.color, -45);
+                ctx.fillRect(x + 3, y + previewSize - 5, previewSize - 6, 2);
+            }
+        }
     }
-  }
-}
 
     moveDown() {
         this.y++;
@@ -262,14 +243,14 @@ class Tetromino {
     }
 
     lock() {
-    for (let i = 0; i < this.shape.length; i++) {
-        for (let j = 0; j < this.shape[i].length; j++) {
-            if (this.shape[i][j]) {
-                board[this.y + i][this.x + j] = { color: this.color, filled: true };
+        for (let i = 0; i < this.shape.length; i++) {
+            for (let j = 0; j < this.shape[i].length; j++) {
+                if (this.shape[i][j]) {
+                    board[this.y + i][this.x + j] = { color: this.color, filled: true };
+                }
             }
         }
     }
-}
 
     canMove(dx: number, dy: number): boolean {
         for (let i = 0; i < this.shape.length; i++) {
@@ -305,36 +286,16 @@ function randomTetromino(): Tetromino {
     return new Tetromino(tetrominoes[key]);
 }
 
-/*  Replaced for better visual style
 function drawBoard() {
-    ctx.fillStyle = 'blue';
-
     for (let row = 0; row < grid.rows; row++) {
         for (let col = 0; col < grid.cols; col++) {
-            if (board[row][col] && board[row][col].filled) {
-                ctx.fillStyle = board[row][col].color || 'blue';
-                ctx.fillRect(
-                    col * grid.size,
-                    row * grid.size,
-                    grid.size,
-                    grid.size
-                );
+            const cell = board[row][col];
+
+            if (cell.filled && cell.color) {
+                drawBlock(col, row, cell.color);
             }
         }
     }
-}
-*/
-
-function drawBoard() {
-  for (let row = 0; row < grid.rows; row++) {
-    for (let col = 0; col < grid.cols; col++) {
-      const cell = board[row][col];
-
-      if (cell.filled && cell.color) {
-        drawBlock(col, row, cell.color);
-      }
-    }
-  }
 }
 
 function drawSidebar() {
@@ -344,10 +305,10 @@ function drawSidebar() {
     const gap = 35;
 
     const panels = [
-    { label: 'SCORE', value: score.toString(), y: 20 },
-    { label: 'LEVEL', value: current_level.toString(), y: 20 + boxHeight + gap },
-    { label: 'LINES', value: lines.toString(), y: 20 + (boxHeight + gap) * 2 }
-];
+        { label: 'SCORE', value: score.toString(), y: 20 },
+        { label: 'LEVEL', value: current_level.toString(), y: 20 + boxHeight + gap },
+        { label: 'LINES', value: lines.toString(), y: 20 + (boxHeight + gap) * 2 }
+    ];
 
     ctx.strokeStyle = '#dadada';
     ctx.fillStyle = '#ffffff';
@@ -385,7 +346,6 @@ let currentTetromino = randomTetromino();
 let nextTetromino = randomTetromino();
 
 let lastDropTime = 0;
-//const dropInterval = 800; // milliseconds: one grid row every 0.8 seconds
 
 function gameLoop(timestamp: number) {
     // Advance the game state only on the drop timer.
@@ -396,14 +356,15 @@ function gameLoop(timestamp: number) {
             // Land the piece
             currentTetromino.lock();
 
-const clearedLines = clearFullRows();
+            const clearedLines = clearFullRows();
 
-// Award line-clear points using the level before updating it.
-if (clearedLines > 0) {
-    score += lineClearPoints[clearedLines] * (current_level + 1);
-    lines += clearedLines;
-    current_level = Math.floor(lines / 10);
-}
+            // Award line-clear points using the level before updating it.
+            if (clearedLines > 0) {
+                score += lineClearPoints[clearedLines] * (current_level + 1);
+                lines += clearedLines;
+                current_level = Math.floor(lines / 10);
+            }
+            
             // Promote the previewed piece, then prepare another preview.
             currentTetromino = nextTetromino;
             nextTetromino = randomTetromino();
@@ -442,8 +403,8 @@ function resetBoard() {
     }
 
     score = 0;
-lines = 0;
-current_level = 0;
+    lines = 0;
+    current_level = 0;
 }
 
 function clearFullRows(): number {

@@ -1,4 +1,8 @@
 "use strict";
+/*
+*   TETRIS clone, based on Gameboy versions of the classic game
+*   Bill English, 2026
+*/
 const canvas = document.createElement('canvas');
 canvas.width = 320;
 canvas.height = 640;
@@ -9,17 +13,8 @@ const grid = {
     cols: 10,
     size: 20
 };
-const board = Array.from({ length: grid.rows }, () => Array.from({ length: grid.cols }, () => ({ filled: false })));
-/*  Replacing drawGrid() with palette and drawPlayfield()
-function drawGrid() {
-    for (let row = 0; row < grid.rows; row++) {
-        for (let col = 0; col < grid.cols; col++) {
-            ctx.strokeStyle = '#ddd';
-            ctx.strokeRect(col * grid.size, row * grid.size, grid.size, grid.size);
-        }
-    }
-}
-*/
+const board = Array.from(// Initialize the game board with empty cells
+{ length: grid.rows }, () => Array.from({ length: grid.cols }, () => ({ filled: false })));
 const palette = {
     page: '#090817',
     cabinet: '#171339',
@@ -31,10 +26,10 @@ const palette = {
 function drawPlayfield() {
     const width = grid.cols * grid.size;
     const height = grid.rows * grid.size;
-    // Main dark-purple well: no cell outlines or overlapping bezel.
+    // Main dark-purple well
     ctx.fillStyle = palette.playfield;
     ctx.fillRect(0, 0, width, height);
-    // A few subtle background pixels add visual depth without becoming a grid.
+    // A few subtle background pixels add visual depth
     ctx.fillStyle = palette.emptySpeck;
     for (const [x, y] of [[2, 2], [5, 5], [8, 8], [3, 13], [7, 17]]) {
         ctx.fillRect(x * grid.size + 8, y * grid.size + 9, 3, 3);
@@ -128,22 +123,10 @@ class Tetromino {
     constructor(shape) {
         this.shape = shape.shape;
         this.color = shape.color;
-        // Start above the visible area
         this.x = Math.floor((grid.cols / 2) - (shape.shape[0].length / 2));
         this.y = 0; // Adjusted to start above the grid
     }
-    /*   Replaced for better visual style
-    draw() {
-        ctx.fillStyle = this.color;
-        for (let i = 0; i < this.shape.length; i++) {
-            for (let j = 0; j < this.shape[i].length; j++) {
-                if (this.shape[i][j]) {
-                    ctx.fillRect((this.x + j) * grid.size, (this.y + i) * grid.size, grid.size, grid.size);
-                }
-            }
-        }
-    }
-        */
+    // Draw the tetromino on the board
     draw() {
         for (let i = 0; i < this.shape.length; i++) {
             for (let j = 0; j < this.shape[i].length; j++) {
@@ -153,6 +136,7 @@ class Tetromino {
             }
         }
     }
+    // Draw a preview of the tetromino in the sidebar
     drawPreview(boxX, boxY, boxWidth, boxHeight) {
         const previewSize = 16;
         const pieceWidth = this.shape[0].length * previewSize;
@@ -252,25 +236,6 @@ function randomTetromino() {
     const key = tetrominoKeys[Math.floor(Math.random() * tetrominoKeys.length)];
     return new Tetromino(tetrominoes[key]);
 }
-/*  Replaced for better visual style
-function drawBoard() {
-    ctx.fillStyle = 'blue';
-
-    for (let row = 0; row < grid.rows; row++) {
-        for (let col = 0; col < grid.cols; col++) {
-            if (board[row][col] && board[row][col].filled) {
-                ctx.fillStyle = board[row][col].color || 'blue';
-                ctx.fillRect(
-                    col * grid.size,
-                    row * grid.size,
-                    grid.size,
-                    grid.size
-                );
-            }
-        }
-    }
-}
-*/
 function drawBoard() {
     for (let row = 0; row < grid.rows; row++) {
         for (let col = 0; col < grid.cols; col++) {
@@ -319,7 +284,6 @@ const lineClearPoints = [0, 40, 100, 300, 1200];
 let currentTetromino = randomTetromino();
 let nextTetromino = randomTetromino();
 let lastDropTime = 0;
-//const dropInterval = 800; // milliseconds: one grid row every 0.8 seconds
 function gameLoop(timestamp) {
     // Advance the game state only on the drop timer.
     if (timestamp - lastDropTime >= getDropInterval()) {
