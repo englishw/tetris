@@ -351,48 +351,30 @@ let nextTetromino = randomTetromino();          // Generate the preview tetromin
 let lastDropTime = 0;       // Initialize the last drop time
 
 function gameLoop(timestamp: number) {          // Main game loop function
-    // Advance the game state only on the drop timer.
+    // Only apply automatic gravity when the current drop interval has elapsed.
     if (timestamp - lastDropTime >= getDropInterval()) {
         if (currentTetromino.canMove(0, 1)) {
             currentTetromino.moveDown();
         } else {
-            // Land the piece
-            currentTetromino.lock();
-
-            const clearedLines = clearFullRows();       // Clear full rows
-
-            // Award line-clear points using the level before updating it.
-            if (clearedLines > 0) {
-                score += lineClearPoints[clearedLines] * (current_level + 1);
-                lines += clearedLines;
-                current_level = Math.floor(lines / 10);     // Update the game level
-            }
-            
-            // Promote the previewed piece, then prepare another preview.
-            currentTetromino = nextTetromino;
-            nextTetromino = randomTetromino();
-
-            // Game over check – new piece cannot be placed
-            if (!currentTetromino.canMove(0, 0)) {
-                alert('Game over!');
-                resetBoard();
-            }
+            // The piece cannot move farther down, so lock it, clear lines,
+            // update score/level, and spawn the next piece.
+            landCurrentTetromino();
         }
-        lastDropTime = timestamp;       // Update the last drop time
+
+        // Restart the gravity timer after either moving or landing.
+        lastDropTime = timestamp;
     }
 
-    // Clear the canvas
+    // Redraw the complete game screen every animation frame.
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw the grid and board
     drawPlayfield();
     drawBoard();
     drawSidebar();
 
-    // Draw the current Tetromino
+    // Draw this after the locked board so the active piece appears on top.
     currentTetromino.draw();
 
-    // Request next frame
     requestAnimationFrame(gameLoop);
 }
 
@@ -407,6 +389,11 @@ function resetBoard() {     // Function to reset the game board and scores
     score = 0;
     lines = 0;
     current_level = 0;
+
+    currentTetromino = randomTetromino();
+    nextTetromino = randomTetromino();
+
+    lastDropTime = performance.now();
 }
 
 function clearFullRows(): number {      // Function to clear full rows from the board
@@ -442,6 +429,46 @@ function clearFullRows(): number {      // Function to clear full rows from the 
 
     return clearedLines;
 }
+// new 8/9/26:
+function spawnNextTetromino() {
+    currentTetromino = nextTetromino;
+    nextTetromino = randomTetromino();
+
+    if (!currentTetromino.canMove(0, 0)) {
+        alert('Game over!');
+        resetBoard();
+    }
+}
+// new 8/9/26:
+function landCurrentTetromino() {
+    currentTetromino.lock();
+
+    const clearedLines = clearFullRows();
+
+    if (clearedLines > 0) {
+        score += lineClearPoints[clearedLines] * (current_level + 1);
+        lines += clearedLines;
+        current_level = Math.floor(lines / 10);
+    }
+
+    spawnNextTetromino();
+}
+// new 8/9/26:
+function hardDrop() {
+    let droppedRows = 0;
+
+    while (currentTetromino.canMove(0, 1)) {
+        currentTetromino.moveDown();
+        droppedRows++;
+    }
+
+    score += droppedRows * 2;
+
+    landCurrentTetromino();
+
+    // Give the newly spawned piece a full drop interval.
+    lastDropTime = performance.now();
+}
 
 function softDrop() {           // Function to handle soft drop of the tetromino
     if (currentTetromino.canMove(0, 1)) {
@@ -469,65 +496,110 @@ document.addEventListener('keydown', (e) => {       // Event listener for keyboa
 // Touch controls
 let touchStartX = 0;
 let touchStartY = 0;
+let lastMoveX = 0;
+let lastMoveY = 0;
+let activePointerId: number | null = null;
+let hardDropUsedThisGesture = false;
+
 const swipeDistance = 30;
+const tapDistance = 12;
 
 canvas.addEventListener('pointerdown', (e) => {
     e.preventDefault();
 
     const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
 
-    // Convert screen coordinates to canvas coordinates
-    touchStartX = (e.clientX - rect.left) * (canvas.width / rect.width);
-    touchStartY = (e.clientY - rect.top) * (canvas.height / rect.height);
+    touchStartX = x;
+    touchStartY = y;
+    lastMoveX = x;
+    lastMoveY = y;
+    activePointerId = e.pointerId;
 
-    // Continue receiving this gesture if the finger moves slightly off canvas
+    // Keep receiving movement/up events even if the finger leaves the canvas.
     canvas.setPointerCapture(e.pointerId);
+    hardDropUsedThisGesture = false;
+});
+
+canvas.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== activePointerId || hardDropUsedThisGesture) return;
+
+    e.preventDefault();
+
+    const rect = canvas.getBoundingClientRect();
+    const currentX = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const currentY = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+    const deltaX = currentX - lastMoveX;
+    const deltaY = currentY - lastMoveY;
+
+    // Downward swipe: hard-drop and lock the piece.
+    if (deltaY >= swipeDistance && Math.abs(deltaY) > Math.abs(deltaX)) {
+    hardDrop();
+
+    // Ignore further movement until this finger is released.
+    hardDropUsedThisGesture = true;
+
+    return;
+}
+
+    // Horizontal drag/swipe: move once per swipeDistance crossed.
+    if (Math.abs(deltaX) >= swipeDistance && Math.abs(deltaX) > Math.abs(deltaY)) {
+        if (deltaX < 0) {
+            if (currentTetromino.canMove(-1, 0)) {
+                currentTetromino.moveLeft();
+            }
+        } else {
+            if (currentTetromino.canMove(1, 0)) {
+                currentTetromino.moveRight();
+            }
+        }
+
+        // Reset only the horizontal reference point, allowing repeated movement
+        // while the player continues dragging/holding left or right.
+        lastMoveX = currentX;
+    }
 });
 
 canvas.addEventListener('pointerup', (e) => {
+    if (e.pointerId !== activePointerId) return;
+
     e.preventDefault();
 
     const rect = canvas.getBoundingClientRect();
     const touchEndX = (e.clientX - rect.left) * (canvas.width / rect.width);
     const touchEndY = (e.clientY - rect.top) * (canvas.height / rect.height);
 
-    const deltaX = touchEndX - touchStartX;
-    const deltaY = touchEndY - touchStartY;
+    const totalDeltaX = touchEndX - touchStartX;
+    const totalDeltaY = touchEndY - touchStartY;
 
-    // Swipe down: move one row down
-    if (deltaY > swipeDistance && Math.abs(deltaY) > Math.abs(deltaX)) {
-        if (currentTetromino.canMove(0, 1)) {
-            currentTetromino.moveDown();
-        }
-        return;
-    }
-
-    // Ignore left, right, and upward swipes for now
-    if (Math.abs(deltaX) > swipeDistance || Math.abs(deltaY) > swipeDistance) {
-        return;
-    }
-
-    // Tap in the upper quarter: rotate
-    if (touchStartY < canvas.height * 0.25) {
+    // A small, stationary tap rotates the piece.
+    if (
+        Math.abs(totalDeltaX) < tapDistance &&
+        Math.abs(totalDeltaY) < tapDistance
+    ) {
         currentTetromino.tryRotate();
-        return;
     }
 
-    // Tap left/right half: move left/right
-    if (touchStartX < canvas.width / 2) {
-        if (currentTetromino.canMove(-1, 0)) {
-            currentTetromino.moveLeft();
-        }
-    } else {
-        if (currentTetromino.canMove(1, 0)) {
-            currentTetromino.moveRight();
-        }
+    if (canvas.hasPointerCapture(e.pointerId)) {
+        canvas.releasePointerCapture(e.pointerId);
     }
+
+    activePointerId = null;
+    hardDropUsedThisGesture = false;
 });
 
-canvas.addEventListener('pointercancel', () => {
-    touchStartX = 0;
-    touchStartY = 0;
+canvas.addEventListener('pointercancel', (e) => {
+    if (e.pointerId === activePointerId) {
+        activePointerId = null;
+        touchStartX = 0;
+        touchStartY = 0;
+        lastMoveX = 0;
+        lastMoveY = 0;
+        hardDropUsedThisGesture = false;
+    }
+    
 });
 
 gameLoop(0);
