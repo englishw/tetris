@@ -181,6 +181,36 @@ class Tetromino {
     }
 }
 
+    drawPreview(boxX: number, boxY: number, boxWidth: number, boxHeight: number) {
+  const previewSize = 16;
+  const pieceWidth = this.shape[0].length * previewSize;
+  const pieceHeight = this.shape.length * previewSize;
+
+  const startX = boxX + (boxWidth - pieceWidth) / 2;
+  const startY = boxY + (boxHeight - pieceHeight) / 2;
+
+  for (let i = 0; i < this.shape.length; i++) {
+    for (let j = 0; j < this.shape[i].length; j++) {
+      if (!this.shape[i][j]) continue;
+
+      const x = startX + j * previewSize;
+      const y = startY + i * previewSize;
+
+      ctx.fillStyle = shadeColor(this.color, -90);
+      ctx.fillRect(x, y, previewSize, previewSize);
+
+      ctx.fillStyle = this.color;
+      ctx.fillRect(x + 2, y + 2, previewSize - 4, previewSize - 4);
+
+      ctx.fillStyle = shadeColor(this.color, 55);
+      ctx.fillRect(x + 3, y + 3, previewSize - 6, 2);
+
+      ctx.fillStyle = shadeColor(this.color, -45);
+      ctx.fillRect(x + 3, y + previewSize - 5, previewSize - 6, 2);
+    }
+  }
+}
+
     moveDown() {
         this.y++;
     }
@@ -338,6 +368,7 @@ function drawSidebar() {
     // Preview: no label, so it can begin shortly below the Lines box.
     const previewY = panels[2].y + 22 + boxHeight + 15;
     ctx.strokeRect(x, previewY, width, 105);
+    nextTetromino.drawPreview(x, previewY, width, 105);
 }
 
 function getDropInterval(): number {
@@ -351,6 +382,7 @@ let lines = 0;
 const lineClearPoints = [0, 40, 100, 300, 1200];
 
 let currentTetromino = randomTetromino();
+let nextTetromino = randomTetromino();
 
 let lastDropTime = 0;
 //const dropInterval = 800; // milliseconds: one grid row every 0.8 seconds
@@ -372,8 +404,9 @@ if (clearedLines > 0) {
     lines += clearedLines;
     current_level = Math.floor(lines / 10);
 }
-            // Spawn a new random piece at the top
-            currentTetromino = randomTetromino();
+            // Promote the previewed piece, then prepare another preview.
+            currentTetromino = nextTetromino;
+            nextTetromino = randomTetromino();
 
             // Game over check – new piece cannot be placed
             if (!currentTetromino.canMove(0, 0)) {
