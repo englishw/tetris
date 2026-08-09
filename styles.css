@@ -24,7 +24,22 @@ body {
 }
 
 canvas {
-  display: block;
-  touch-action: none;
-  image-rendering: pixelated;
+    display: block;
+    touch-action: none;
+    image-rendering: pixelated;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent mobile long-press selection, copy callouts, and tap highlighting
+   inside the game cabinet. */
+#game-container,
+#game-container * {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-drag: none;
 }
