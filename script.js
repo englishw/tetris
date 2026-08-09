@@ -3,11 +3,18 @@
 *   TETRIS clone, based on Gameboy versions of the classic game
 *   Bill English, 2026
 */
+const gameContainer = document.getElementById('game-container');
 const canvas = document.createElement('canvas');
 canvas.width = 320;
 canvas.height = 640;
 const ctx = canvas.getContext('2d');
-document.getElementById('game-container').appendChild(canvas);
+gameContainer.appendChild(canvas);
+const startButton = document.createElement('button');
+startButton.id = 'start-button';
+startButton.type = 'button';
+startButton.textContent = 'PLAY';
+gameContainer.appendChild(startButton);
+let gameStarted = false;
 const grid = {
     rows: 20,
     cols: 10,
@@ -317,6 +324,8 @@ let currentTetromino = randomTetromino(); // Generate the first tetromino
 let nextTetromino = randomTetromino(); // Generate the preview tetromino
 let lastDropTime = 0; // Initialize the last drop time
 function gameLoop(timestamp) {
+    if (!gameStarted)
+        return;
     // Only apply automatic gravity when the current drop interval has elapsed.
     if (timestamp - lastDropTime >= getDropInterval()) {
         if (currentTetromino.canMove(0, 1)) {
@@ -417,6 +426,8 @@ let lastDropKeyTime = 0;
 let hardDropKeyHeld = '';
 const doublePressWindow = 250;
 document.addEventListener('keydown', (e) => {
+    if (!gameStarted)
+        return;
     const gameKeys = [
         'ArrowLeft',
         'ArrowRight',
@@ -509,8 +520,7 @@ function startSoftDrop() {
     }, softDropInterval);
 }
 canvas.addEventListener('pointerdown', (e) => {
-    // Ignore a second finger while another gesture is active.
-    if (activePointerId !== null)
+    if (!gameStarted || activePointerId !== null)
         return;
     e.preventDefault();
     const rect = canvas.getBoundingClientRect();
@@ -599,4 +609,19 @@ canvas.addEventListener('pointercancel', (e) => {
     lastMoveX = 0;
     lastMoveY = 0;
 });
-gameLoop(0);
+// Draw the game cabinet and first piece, but do not begin gravity yet.
+ctx.clearRect(0, 0, canvas.width, canvas.height);
+drawPlayfield();
+drawBoard();
+drawSidebar();
+drawInstructions();
+currentTetromino.draw();
+startButton.addEventListener('click', () => {
+    if (gameStarted)
+        return;
+    gameStarted = true;
+    startButton.style.display = 'none';
+    // Begin the first gravity interval from the moment Play is pressed.
+    lastDropTime = performance.now();
+    requestAnimationFrame(gameLoop);
+});
