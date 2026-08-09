@@ -291,8 +291,10 @@ function drawInstructions() {
     const helpLines = [
         'Tap / W / Up: Rotate',
         'Drag left/right / A,D / Arrows: Move',
-        'Drag down and hold / S / Down: Soft drop',
+        'Drag down and hold: Soft drop',
         'Quick long downward swipe: Hard drop',
+        'Down / S: Soft drop',
+        'Double-press Down / S: Hard drop',
         '',
         'Score: Soft drop = 1 per row',
         'Hard drop = 2 per row',
@@ -410,7 +412,53 @@ function softDrop() {
         score += 1; // Award points for soft dropping
     }
 }
+let lastDropKey = '';
+let lastDropKeyTime = 0;
+let hardDropKeyHeld = '';
+const doublePressWindow = 250;
 document.addEventListener('keydown', (e) => {
+    const gameKeys = [
+        'ArrowLeft',
+        'ArrowRight',
+        'ArrowUp',
+        'ArrowDown',
+        'a',
+        'd',
+        'w',
+        's'
+    ];
+    if (gameKeys.includes(e.key)) {
+        e.preventDefault();
+    }
+    // Down Arrow / S: one press soft-drops, holding repeats soft drops,
+    // and two quick separate presses perform a hard drop.
+    if (e.key === 'ArrowDown' || e.key === 's') {
+        // Ignore keyboard-repeat events after a hard drop until key release.
+        if (hardDropKeyHeld === e.key) {
+            return;
+        }
+        // A held key generates repeat events, which perform soft drops only.
+        if (e.repeat) {
+            softDrop();
+            return;
+        }
+        const now = performance.now();
+        // Two distinct presses of the same drop key within the time window.
+        if (lastDropKey === e.key &&
+            now - lastDropKeyTime <= doublePressWindow) {
+            hardDrop();
+            // Do not allow the held second press to soft-drop the new piece.
+            hardDropKeyHeld = e.key;
+            lastDropKey = '';
+            lastDropKeyTime = 0;
+            return;
+        }
+        // First press: one soft drop.
+        softDrop();
+        lastDropKey = e.key;
+        lastDropKeyTime = now;
+        return;
+    }
     if (e.key === 'ArrowLeft' || e.key === 'a') {
         if (currentTetromino.canMove(-1, 0)) {
             currentTetromino.moveLeft();
@@ -424,8 +472,10 @@ document.addEventListener('keydown', (e) => {
     else if (e.key === 'ArrowUp' || e.key === 'w') {
         currentTetromino.tryRotate();
     }
-    else if (e.key === 'ArrowDown' || e.key === 's') {
-        softDrop();
+});
+document.addEventListener('keyup', (e) => {
+    if (e.key === hardDropKeyHeld) {
+        hardDropKeyHeld = '';
     }
 });
 // Touch controls
