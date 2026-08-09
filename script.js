@@ -369,20 +369,20 @@ function softDrop() {
     }
 }
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowLeft') {
+    if (e.key === 'ArrowLeft' || e.key === 'a') {
         if (currentTetromino.canMove(-1, 0)) {
             currentTetromino.moveLeft();
         }
     }
-    else if (e.key === 'ArrowRight') {
+    else if (e.key === 'ArrowRight' || e.key === 'd') {
         if (currentTetromino.canMove(1, 0)) {
             currentTetromino.moveRight();
         }
     }
-    else if (e.key === 'ArrowUp') {
+    else if (e.key === 'ArrowUp' || e.key === 'w') {
         currentTetromino.tryRotate();
     }
-    else if (e.key === 'ArrowDown') {
+    else if (e.key === 'ArrowDown' || e.key === 's') {
         softDrop();
     }
 });
