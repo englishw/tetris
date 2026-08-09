@@ -242,6 +242,7 @@ class Tetromino {           // Class to represent a tetromino piece
         this.shape = rotated;
     }
 
+    // Lock the tetromino in place on the board
     lock() {
         for (let i = 0; i < this.shape.length; i++) {
             for (let j = 0; j < this.shape[i].length; j++) {
@@ -252,6 +253,7 @@ class Tetromino {           // Class to represent a tetromino piece
         }
     }
 
+    // Check if the tetromino can move to a new position
     canMove(dx: number, dy: number): boolean {
         for (let i = 0; i < this.shape.length; i++) {
             for (let j = 0; j < this.shape[i].length; j++) {
@@ -279,14 +281,15 @@ class Tetromino {           // Class to represent a tetromino piece
     }
 }
 
+// Get the keys of the tetrominoes object
 const tetrominoKeys = Object.keys(tetrominoes);
 
-function randomTetromino(): Tetromino {
+function randomTetromino(): Tetromino {     // Function to generate a random tetromino
     const key = tetrominoKeys[Math.floor(Math.random() * tetrominoKeys.length)];
     return new Tetromino(tetrominoes[key]);
 }
 
-function drawBoard() {
+function drawBoard() {      // Function to draw the game board
     for (let row = 0; row < grid.rows; row++) {
         for (let col = 0; col < grid.cols; col++) {
             const cell = board[row][col];
@@ -298,7 +301,7 @@ function drawBoard() {
     }
 }
 
-function drawSidebar() {
+function drawSidebar() {        // Function to draw the sidebar with score, level, lines, and preview
     const x = grid.cols * grid.size + 10;
     const width = canvas.width - x - 10;
     const boxHeight = 55;
@@ -332,22 +335,22 @@ function drawSidebar() {
     nextTetromino.drawPreview(x, previewY, width, 105);
 }
 
-function getDropInterval(): number {
+function getDropInterval(): number {        // Function to get the drop interval based on the current level
     return Math.max(100, 800 - current_level * 50);
 }
 
-let current_level = 0;
-let score = 0;
-let lines = 0;
+let current_level = 0;      // Initialize the game level
+let score = 0;              // Initialize the score
+let lines = 0;              // Initialize the number of lines cleared
 
 const lineClearPoints = [0, 40, 100, 300, 1200];
 
-let currentTetromino = randomTetromino();
-let nextTetromino = randomTetromino();
+let currentTetromino = randomTetromino();       // Generate the first tetromino
+let nextTetromino = randomTetromino();          // Generate the preview tetromino
 
-let lastDropTime = 0;
+let lastDropTime = 0;       // Initialize the last drop time
 
-function gameLoop(timestamp: number) {
+function gameLoop(timestamp: number) {          // Main game loop function
     // Advance the game state only on the drop timer.
     if (timestamp - lastDropTime >= getDropInterval()) {
         if (currentTetromino.canMove(0, 1)) {
@@ -356,13 +359,13 @@ function gameLoop(timestamp: number) {
             // Land the piece
             currentTetromino.lock();
 
-            const clearedLines = clearFullRows();
+            const clearedLines = clearFullRows();       // Clear full rows
 
             // Award line-clear points using the level before updating it.
             if (clearedLines > 0) {
                 score += lineClearPoints[clearedLines] * (current_level + 1);
                 lines += clearedLines;
-                current_level = Math.floor(lines / 10);
+                current_level = Math.floor(lines / 10);     // Update the game level
             }
             
             // Promote the previewed piece, then prepare another preview.
@@ -375,14 +378,13 @@ function gameLoop(timestamp: number) {
                 resetBoard();
             }
         }
-        lastDropTime = timestamp;
+        lastDropTime = timestamp;       // Update the last drop time
     }
 
     // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw the grid and board
-    //drawGrid();
     drawPlayfield();
     drawBoard();
     drawSidebar();
@@ -394,7 +396,7 @@ function gameLoop(timestamp: number) {
     requestAnimationFrame(gameLoop);
 }
 
-function resetBoard() {
+function resetBoard() {     // Function to reset the game board and scores
     for (let row = 0; row < grid.rows; row++) {
         board[row] = Array.from(
             { length: grid.cols },
@@ -407,7 +409,7 @@ function resetBoard() {
     current_level = 0;
 }
 
-function clearFullRows(): number {
+function clearFullRows(): number {      // Function to clear full rows from the board
     let clearedLines = 0;
 
     for (let row = grid.rows - 1; row >= 0; row--) {
@@ -423,30 +425,32 @@ function clearFullRows(): number {
         if (isRowFull) {
             clearedLines++;
 
+            // Move all rows above the cleared row down by one
             for (let r = row; r > 0; r--) {
                 board[r] = [...board[r - 1]];
             }
 
+            // Clear the topmost row
             board[0] = Array.from(
                 { length: grid.cols },
                 () => ({ filled: false })
             );
 
-            row++;
+            row++;      // Stay on the same row to check for multiple full rows
         }
     }
 
     return clearedLines;
 }
 
-function softDrop() {
+function softDrop() {           // Function to handle soft drop of the tetromino
     if (currentTetromino.canMove(0, 1)) {
         currentTetromino.moveDown();
-        score += 1;
+        score += 1;         // Award points for soft dropping
     }
 }
 
-document.addEventListener('keydown', (e) => {
+document.addEventListener('keydown', (e) => {       // Event listener for keyboard input
     if (e.key === 'ArrowLeft' || e.key === 'a') {
         if (currentTetromino.canMove(-1, 0)) {
             currentTetromino.moveLeft();
