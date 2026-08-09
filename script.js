@@ -31,16 +31,9 @@ const palette = {
 function drawPlayfield() {
     const width = grid.cols * grid.size;
     const height = grid.rows * grid.size;
-    // Main dark-purple well: no cell outlines.
+    // Main dark-purple well: no cell outlines or overlapping bezel.
     ctx.fillStyle = palette.playfield;
     ctx.fillRect(0, 0, width, height);
-    // Pixel-art bezel/shadow at the edges.
-    ctx.fillStyle = palette.shadow;
-    ctx.fillRect(0, 0, 4, height);
-    ctx.fillRect(width - 4, 0, 4, height);
-    ctx.fillStyle = palette.playfieldEdge;
-    ctx.fillRect(4, 0, 2, height);
-    ctx.fillRect(width - 6, 0, 2, height);
     // A few subtle background pixels add visual depth without becoming a grid.
     ctx.fillStyle = palette.emptySpeck;
     for (const [x, y] of [[2, 2], [5, 5], [8, 8], [3, 13], [7, 17]]) {
